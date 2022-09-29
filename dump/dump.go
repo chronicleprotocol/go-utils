@@ -33,6 +33,9 @@ func Dump(v interface{}) interface{} {
 		return toJSON(v)
 	default:
 		rv := reflect.ValueOf(v)
+		if v == nil || rv.IsZero() {
+			return nil
+		}
 		rt := rv.Type()
 		switch rv.Kind() {
 		case reflect.Struct:
