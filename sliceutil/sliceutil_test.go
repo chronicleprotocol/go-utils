@@ -13,30 +13,16 @@
 //  You should have received a copy of the GNU Affero General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package maputil
+package sliceutil
 
-// Keys returns the slice of keys for the given map.
-func Keys[T1 comparable, T2 any](m map[T1]T2) []T1 {
-	keys := make([]T1, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
-}
+import (
+	"testing"
 
-// SortKeys returns the slice of keys for the given map, sorted using given
-// sorting function.
-func SortKeys[T1 comparable, T2 any](m map[T1]T2, sort func([]T1)) []T1 {
-	keys := Keys(m)
-	sort(keys)
-	return keys
-}
+	"github.com/stretchr/testify/assert"
+)
 
-// Copy returns a shallow copy of the given map.
-func Copy[T1 comparable, T2 any](m map[T1]T2) map[T1]T2 {
-	newMap := make(map[T1]T2, len(m))
-	for k, v := range m {
-		newMap[k] = v
-	}
-	return newMap
+func TestCopy(t *testing.T) {
+	m := []string{"a", "b", "c"}
+	assert.Equal(t, m, Copy(m))
+	assert.NotSame(t, m, Copy(m))
 }
