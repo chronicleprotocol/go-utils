@@ -21,7 +21,7 @@ func TestDecFixedPoint(t *testing.T) {
 			expected: &DecFixedPointNumber{x: big.NewInt(42), n: 0},
 		},
 		{
-			name:     "Pointer to IntNumber",
+			name:     "pointer to IntNumber",
 			input:    &IntNumber{big.NewInt(42)},
 			prec:     0,
 			expected: &DecFixedPointNumber{x: big.NewInt(42), n: 0},
@@ -33,7 +33,7 @@ func TestDecFixedPoint(t *testing.T) {
 			expected: &DecFixedPointNumber{x: big.NewInt(4250), n: 2},
 		},
 		{
-			name:     "Pointer to FloatNumber",
+			name:     "pointer to FloatNumber",
 			input:    &FloatNumber{big.NewFloat(42.5)},
 			prec:     2,
 			expected: &DecFixedPointNumber{x: big.NewInt(4250), n: 2},
@@ -79,6 +79,66 @@ func TestDecFixedPoint(t *testing.T) {
 				assert.Equal(t, test.expected.String(), result.String())
 				assert.Equal(t, test.expected.Precision(), result.Precision())
 			}
+		})
+	}
+}
+
+func TestDecFixedPointNumber_String(t *testing.T) {
+	tests := []struct {
+		name     string
+		n        *DecFixedPointNumber
+		expected string
+	}{
+		{
+			name:     "zero precision",
+			n:        &DecFixedPointNumber{x: big.NewInt(10625), n: 0}, // 10625
+			expected: "10625",
+		},
+		{
+			name:     "two digits precision",
+			n:        &DecFixedPointNumber{x: big.NewInt(10625), n: 2}, // 106.25
+			expected: "106.25",
+		},
+		{
+			name:     "ten digits precision",
+			n:        &DecFixedPointNumber{x: big.NewInt(10625), n: 10}, // 0.0000010625
+			expected: "0.0000010625",
+		},
+		{
+			name:     "zero precision negative",
+			n:        &DecFixedPointNumber{x: big.NewInt(-10625), n: 0}, // -10625
+			expected: "-10625",
+		},
+		{
+			name:     "two digits precision negative",
+			n:        &DecFixedPointNumber{x: big.NewInt(-10625), n: 2}, // -106.25
+			expected: "-106.25",
+		},
+		{
+			name:     "ten digits precision negative",
+			n:        &DecFixedPointNumber{x: big.NewInt(-10625), n: 10}, // -0.0000010625
+			expected: "-0.0000010625",
+		},
+		{
+			name:     "remove trailing zeros",
+			n:        &DecFixedPointNumber{x: big.NewInt(1062500), n: 4}, // 106.2500
+			expected: "106.25",
+		},
+		{
+			name:     "remove trailing zeros (no fractional part)",
+			n:        &DecFixedPointNumber{x: big.NewInt(1060000), n: 4}, // 106
+			expected: "106",
+		},
+		{
+			name:     "remove trailing zeros (no integer part)",
+			n:        &DecFixedPointNumber{x: big.NewInt(1062500), n: 10}, // 0.00010625
+			expected: "0.00010625",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.n.String())
 		})
 	}
 }
