@@ -1,3 +1,18 @@
+//  Copyright (C) 2021-2023 Chronicle Labs, Inc.
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU Affero General Public License as
+//  published by the Free Software Foundation, either version 3 of the
+//  License, or (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU Affero General Public License for more details.
+//
+//  You should have received a copy of the GNU Affero General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package bn
 
 import (
@@ -16,12 +31,42 @@ func TestFloat(t *testing.T) {
 	}{
 		{
 			name:     "IntNumber",
-			input:    Int(big.NewInt(42)),
+			input:    IntNumber{big.NewInt(42)},
+			expected: &FloatNumber{x: big.NewFloat(42)},
+		},
+		{
+			name:     "*IntNumber",
+			input:    &IntNumber{big.NewInt(42)},
 			expected: &FloatNumber{x: big.NewFloat(42)},
 		},
 		{
 			name:     "FloatNumber",
-			input:    Float(big.NewFloat(42.5)),
+			input:    FloatNumber{x: big.NewFloat(42.5)},
+			expected: &FloatNumber{x: big.NewFloat(42.5)},
+		},
+		{
+			name:     "*FloatNumber",
+			input:    &FloatNumber{x: big.NewFloat(42.5)},
+			expected: &FloatNumber{x: big.NewFloat(42.5)},
+		},
+		{
+			name:     "DecFixedPointNumber",
+			input:    DecFixedPointNumber{x: big.NewInt(4250), p: 2},
+			expected: &FloatNumber{x: big.NewFloat(42.5)},
+		},
+		{
+			name:     "*DecFixedPointNumber",
+			input:    &DecFixedPointNumber{x: big.NewInt(4250), p: 2},
+			expected: &FloatNumber{x: big.NewFloat(42.5)},
+		},
+		{
+			name:     "DecFloatPointNumber",
+			input:    DecFloatPointNumber{x: &DecFixedPointNumber{x: big.NewInt(4250), p: 2}},
+			expected: &FloatNumber{x: big.NewFloat(42.5)},
+		},
+		{
+			name:     "*DecFloatPointNumber",
+			input:    &DecFloatPointNumber{x: &DecFixedPointNumber{x: big.NewInt(4250), p: 2}},
 			expected: &FloatNumber{x: big.NewFloat(42.5)},
 		},
 		{
@@ -40,7 +85,7 @@ func TestFloat(t *testing.T) {
 			expected: &FloatNumber{x: big.NewFloat(42)},
 		},
 		{
-			name:     "float64",
+			name:     "float",
 			input:    42.5,
 			expected: &FloatNumber{x: big.NewFloat(42.5)},
 		},
@@ -99,12 +144,6 @@ func TestFloatNumber_BigFloat(t *testing.T) {
 	assert.Equal(t, f.x, bf)
 }
 
-func TestFloatNumber_Float64(t *testing.T) {
-	f := Float(3.14)
-	f64 := f.Float64()
-	assert.Equal(t, 3.14, f64)
-}
-
 func TestFloatNumber_Sign(t *testing.T) {
 	f := Float(-3.14)
 	assert.Equal(t, -1, f.Sign())
@@ -118,25 +157,25 @@ func TestFloatNumber_Sign(t *testing.T) {
 
 func TestFloatNumber_Add(t *testing.T) {
 	f := Float(3.14)
-	res := f.Add(1.86)
+	res := f.Add(Float(1.86))
 	assert.Equal(t, Float(5.0).String(), res.String())
 }
 
 func TestFloatNumber_Sub(t *testing.T) {
 	f := Float(3.14)
-	res := f.Sub(1.14)
+	res := f.Sub(Float(1.14))
 	assert.Equal(t, Float(2.0).String(), res.String())
 }
 
 func TestFloatNumber_Mul(t *testing.T) {
 	f := Float(3.14)
-	res := f.Mul(2)
+	res := f.Mul(Float(2))
 	assert.Equal(t, Float(6.28).String(), res.String())
 }
 
 func TestFloatNumber_Div(t *testing.T) {
 	f := Float(3.14)
-	res := f.Div(2)
+	res := f.Div(Float(2))
 	assert.Equal(t, Float(1.57).String(), res.String())
 }
 

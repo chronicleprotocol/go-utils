@@ -1,59 +1,172 @@
+//  Copyright (C) 2021-2023 Chronicle Labs, Inc.
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU Affero General Public License as
+//  published by the Free Software Foundation, either version 3 of the
+//  License, or (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU Affero General Public License for more details.
+//
+//  You should have received a copy of the GNU Affero General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package bn
 
 import (
+	"math"
 	"math/big"
+	"strings"
+
+	"golang.org/x/exp/constraints"
+)
+
+const MaxDecPointPrecision = math.MaxUint8
+
+const (
+	// decGuardDigits is the number of decimal digits to use as guard digits
+	// when performing arithmetic operations that may result in rounding.
+	decGuardDigits = 2
+
+	// divPrecisionIncrease is the number of decimal digits to increase when
+	// dividing two DecFloatPointNumber.
+	divPrecisionIncrease = 16
 )
 
 var (
-	intOne   = big.NewInt(1)
-	intTen   = big.NewInt(10)
-	floatOne = big.NewFloat(1)
+	intZero   = big.NewInt(0)
+	intOne    = big.NewInt(1)
+	intTen    = big.NewInt(10)
+	floatHalf = big.NewFloat(0.5) //nolint:gomnd
+	floatOne  = big.NewFloat(1)
 )
 
+func convertIntToDecFloatPoint(x *IntNumber) *DecFloatPointNumber {
+	return &DecFloatPointNumber{x: convertIntToDecFixedPoint(x, 0)}
+}
+
+func convertFloatToDecFloatPoint(x *FloatNumber) *DecFloatPointNumber {
+	p := floatDecPrec(x)
+	if p > MaxDecPointPrecision {
+		p = MaxDecPointPrecision
+	}
+	return &DecFloatPointNumber{x: convertFloatToDecFixedPoint(x, uint8(p))}
+}
+
+func convertDecFixedPointToDecFloatPoint(x *DecFixedPointNumber) *DecFloatPointNumber {
+	return &DecFloatPointNumber{x: x}
+}
+
+func convertBigIntToDecFloatPoint(x *big.Int) *DecFloatPointNumber {
+	return &DecFloatPointNumber{x: convertBigIntToDecFixedPoint(x, 0)}
+}
+
+func convertBigFloatToDecFloatPoint(x *big.Float) *DecFloatPointNumber {
+	if x == nil || x.IsInf() {
+		return nil
+	}
+	p := bigFloatDecPrec(x)
+	if p > MaxDecPointPrecision {
+		p = MaxDecPointPrecision
+	}
+	return &DecFloatPointNumber{x: convertBigFloatToDecFixedPoint(x, uint8(p))}
+}
+
+func convertInt64ToDecFloatPoint(x int64) *DecFloatPointNumber {
+	return &DecFloatPointNumber{x: convertInt64ToDecFixedPoint(x, 0)}
+}
+
+func convertUint64ToDecFloatPoint(x uint64) *DecFloatPointNumber {
+	return &DecFloatPointNumber{x: convertUint64ToDecFixedPoint(x, 0)}
+}
+
+func convertFloat64ToDecFloatPoint(x float64) *DecFloatPointNumber {
+	if math.IsInf(x, 0) || math.IsNaN(x) {
+		return nil
+	}
+	p := float64DecPrec(x)
+	if p > MaxDecPointPrecision {
+		p = MaxDecPointPrecision
+	}
+	n := convertFloat64ToDecFixedPoint(x, uint8(p))
+	if n == nil {
+		return nil
+	}
+	return &DecFloatPointNumber{x: n}
+}
+
+func convertStringToDecFloatPoint(x string) *DecFloatPointNumber {
+	p, ok := stringNumberDecPrec(x)
+	if !ok {
+		return nil
+	}
+	if p > MaxDecPointPrecision {
+		p = MaxDecPointPrecision
+	}
+	n := convertStringToDecFixedPoint(x, uint8(p))
+	if n == nil {
+		return nil
+	}
+	return &DecFloatPointNumber{x: n}
+}
+
 func convertIntToDecFixedPoint(x *IntNumber, n uint8) *DecFixedPointNumber {
-	return &DecFixedPointNumber{x: x.Mul(decFixedPointScale(n)).BigInt(), n: n}
+	return &DecFixedPointNumber{x: bigIntSetPrec(x.x, 0, uint32(n)), p: n}
 }
 
 func convertFloatToDecFixedPoint(x *FloatNumber, n uint8) *DecFixedPointNumber {
-	i, _ := new(big.Float).Mul(x.BigFloat(), new(big.Float).SetInt(decFixedPointScale(n))).Int(nil)
-	return &DecFixedPointNumber{x: i, n: n}
+	i := bigFloatToBigInt(new(big.Float).Mul(x.BigFloat(), new(big.Float).SetInt(pow10(n))))
+	return &DecFixedPointNumber{x: i, p: n}
+}
+
+func convertDecFloatPointToDecFixedPoint(x *DecFloatPointNumber, n uint8) *DecFixedPointNumber {
+	return x.x.SetPrec(n)
 }
 
 func convertBigIntToDecFixedPoint(x *big.Int, n uint8) *DecFixedPointNumber {
-	return &DecFixedPointNumber{x: new(big.Int).Mul(x, decFixedPointScale(n)), n: n}
+	return &DecFixedPointNumber{x: new(big.Int).Mul(x, pow10(n)), p: n}
 }
 
 func convertBigFloatToDecFixedPoint(x *big.Float, n uint8) *DecFixedPointNumber {
-	i, _ := new(big.Float).Mul(x, new(big.Float).SetInt(decFixedPointScale(n))).Int(nil)
-	return &DecFixedPointNumber{x: i, n: n}
+	i := bigFloatToBigInt(new(big.Float).Mul(x, new(big.Float).SetInt(pow10(n))))
+	return &DecFixedPointNumber{x: i, p: n}
 }
 
 func convertInt64ToDecFixedPoint(x int64, n uint8) *DecFixedPointNumber {
-	return &DecFixedPointNumber{x: new(big.Int).Mul(new(big.Int).SetInt64(x), decFixedPointScale(n)), n: n}
+	return &DecFixedPointNumber{x: new(big.Int).Mul(new(big.Int).SetInt64(x), pow10(n)), p: n}
 }
 
 func convertUint64ToDecFixedPoint(x uint64, n uint8) *DecFixedPointNumber {
-	return &DecFixedPointNumber{x: new(big.Int).Mul(new(big.Int).SetUint64(x), decFixedPointScale(n)), n: n}
+	return &DecFixedPointNumber{x: new(big.Int).Mul(new(big.Int).SetUint64(x), pow10(n)), p: n}
 }
 
 func convertFloat64ToDecFixedPoint(x float64, n uint8) *DecFixedPointNumber {
-	i, _ := new(big.Float).Mul(big.NewFloat(x), new(big.Float).SetInt(decFixedPointScale(n))).Int(nil)
-	return &DecFixedPointNumber{x: i, n: n}
+	if math.IsInf(x, 0) || math.IsNaN(x) {
+		return nil
+	}
+	i := bigFloatToBigInt(new(big.Float).Mul(big.NewFloat(x), new(big.Float).SetInt(pow10(n))))
+	return &DecFixedPointNumber{x: i, p: n}
 }
 
 func convertStringToDecFixedPoint(x string, n uint8) *DecFixedPointNumber {
 	if f, ok := new(big.Float).SetString(x); ok {
-		i, _ := new(big.Float).Mul(f, new(big.Float).SetInt(decFixedPointScale(n))).Int(nil)
-		return &DecFixedPointNumber{x: i, n: n}
+		i := bigFloatToBigInt(new(big.Float).Mul(f, new(big.Float).SetInt(pow10(n))))
+		return &DecFixedPointNumber{x: i, p: n}
 	}
 	return nil
 }
 
-func convertIntNumberToFloat(x *IntNumber) *FloatNumber {
+func convertIntToFloat(x *IntNumber) *FloatNumber {
 	return &FloatNumber{x: x.BigFloat()}
 }
 
 func convertDecFixedPointToFloat(x *DecFixedPointNumber) *FloatNumber {
+	return &FloatNumber{x: x.BigFloat()}
+}
+
+func convertDecFloatPointToFloat(x *DecFloatPointNumber) *FloatNumber {
 	return &FloatNumber{x: x.BigFloat()}
 }
 
@@ -84,11 +197,15 @@ func convertStringToFloat(x string) *FloatNumber {
 	return nil
 }
 
-func convertFloatNumberToInt(x *FloatNumber) *IntNumber {
+func convertFloatToInt(x *FloatNumber) *IntNumber {
 	return &IntNumber{x: x.BigInt()}
 }
 
 func convertDecFixedPointToInt(x *DecFixedPointNumber) *IntNumber {
+	return &IntNumber{x: x.BigInt()}
+}
+
+func convertDecFloatPointToInt(x *DecFloatPointNumber) *IntNumber {
 	return &IntNumber{x: x.BigInt()}
 }
 
@@ -97,8 +214,7 @@ func convertBigIntToInt(x *big.Int) *IntNumber {
 }
 
 func convertBigFloatToInt(x *big.Float) *IntNumber {
-	i, _ := x.Int(nil)
-	return &IntNumber{x: i}
+	return &IntNumber{x: bigFloatToBigInt(x)}
 }
 
 func convertInt64ToInt(x int64) *IntNumber {
@@ -110,8 +226,7 @@ func convertUint64ToInt(x uint64) *IntNumber {
 }
 
 func convertFloat64ToInt(x float64) *IntNumber {
-	f, _ := big.NewFloat(x).Int(nil)
-	return &IntNumber{x: f}
+	return &IntNumber{x: bigFloatToBigInt(big.NewFloat(x))}
 }
 
 func convertStringToInt(x string) *IntNumber {
@@ -123,10 +238,6 @@ func convertStringToInt(x string) *IntNumber {
 
 func convertBytesToInt(x []byte) *IntNumber {
 	return &IntNumber{x: new(big.Int).SetBytes(x)}
-}
-
-func decFixedPointScale(n uint8) *big.Int {
-	return new(big.Int).Exp(intTen, big.NewInt(int64(n)), nil)
 }
 
 func anyToInt64(x any) int64 {
@@ -169,4 +280,61 @@ func anyToFloat64(x any) float64 {
 		return x
 	}
 	return 0
+}
+
+func floatDecPrec(x *FloatNumber) uint32 {
+	return bigFloatDecPrec(x.BigFloat())
+}
+
+func bigFloatDecPrec(x *big.Float) uint32 {
+	s := x.Text('f', -1)
+	if len(s) == 0 {
+		return 0
+	}
+	d := strings.Index(s, ".")
+	if d == -1 {
+		return 0
+	}
+	z := len(s) - 1
+	for z >= d && s[z] == '0' {
+		z--
+	}
+	return uint32(z - d)
+}
+
+func float64DecPrec(x float64) uint32 {
+	return bigFloatDecPrec(big.NewFloat(x))
+}
+
+func stringNumberDecPrec(x string) (uint32, bool) {
+	if f, ok := new(big.Float).SetString(x); ok {
+		return bigFloatDecPrec(f), true
+	}
+	if _, ok := new(big.Int).SetString(x, 0); ok {
+		return 0, true
+	}
+	return 0, false
+}
+
+func bigFloatToBigInt(x *big.Float) *big.Int {
+	i, acc := x.Int(nil)
+	if acc == big.Exact {
+		return i
+	}
+	f := x.Sub(x, new(big.Float).SetInt(i))
+	if f.Cmp(floatHalf) >= 0 {
+		i.Add(i, big.NewInt(1))
+	}
+	return i
+}
+
+func max[T constraints.Integer](x, y T) T {
+	if x > y {
+		return x
+	}
+	return y
+}
+
+func pow10[T constraints.Integer](n T) *big.Int {
+	return new(big.Int).Exp(intTen, big.NewInt(int64(n)), nil)
 }
