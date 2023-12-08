@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/chronicleprotocol/oracle-suite/pkg/util/maputil"
+	"github.com/chronicleprotocol/suite/pkg/util/maputil"
 )
 
 // NodeData contains data for a single node in the tree.
