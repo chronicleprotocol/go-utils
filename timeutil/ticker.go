@@ -65,6 +65,11 @@ func (t *Ticker) TickCh() <-chan time.Time {
 	return t.c
 }
 
+// Copy creates a copy of the ticker that can be started independently.
+func (t *Ticker) Copy() *Ticker {
+	return &Ticker{d: t.d, c: make(chan time.Time)}
+}
+
 func (t *Ticker) ticker(d time.Duration) {
 	if d == 0 {
 		return
