@@ -16,21 +16,22 @@
 package chanutil
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestFanIn(t *testing.T) {
-	ch1 := make(chan int)
-	ch2 := make(chan int)
-	ch3 := make(chan int)
+	in1 := make(chan int)
+	in2 := make(chan int)
+	in3 := make(chan int)
+	out := make(chan int)
 
-	fi := NewFanIn(ch1, ch2, ch3)
-	ch := fi.Chan()
+	fi := NewFanIn(out)
+	fi.Input(in1, in2, in3)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -38,26 +39,26 @@ func TestFanIn(t *testing.T) {
 		var v []int
 
 		for i := 0; i < 3; i++ {
-			v = append(v, <-ch)
+			v = append(v, <-out)
 		}
 		assert.ElementsMatch(t, []int{1, 2, 3}, v)
 		wg.Done()
 	}()
 
-	ch1 <- 1
-	ch2 <- 2
-	ch3 <- 3
+	in1 <- 1
+	in2 <- 2
+	in3 <- 3
 
-	close(ch1)
-	close(ch2)
-	close(ch3)
+	close(in1)
+	close(in2)
+	close(in3)
 
 	fi.Wait()
-	assert.NoError(t, fi.Close())
+	fi.Close()
 
 	// The output channel should be closed after closing all the input
 	// channels.
-	_, ok := <-ch
+	_, ok := <-out
 	assert.False(t, ok)
 
 	// Wait for the goroutine to finish.
@@ -65,75 +66,55 @@ func TestFanIn(t *testing.T) {
 }
 
 func TestFanIn_AutoClose(t *testing.T) {
-	ch1 := make(chan int)
-	ch2 := make(chan int)
-	ch3 := make(chan int)
+	in1 := make(chan int)
+	in2 := make(chan int)
+	in3 := make(chan int)
+	out := make(chan int)
 
-	fi := NewFanIn(ch1, ch2, ch3)
+	fi := NewFanIn(out)
+	fi.Input(in1, in2, in3)
 
-	close(ch1)
-	close(ch2)
-	close(ch3)
+	close(in1)
+	close(in2)
+	close(in3)
 
 	fi.AutoClose()
 
 	// The output channel should be automatically closed because all input
 	// channels are closed.
-	_, ok := <-fi.Chan()
+	_, ok := <-out
 	assert.False(t, ok)
-	assert.Error(t, fi.Close())
+	fi.Close()
 }
 
 func TestFanIn_AutoClose_NoInputs(t *testing.T) {
-	fi := NewFanIn[int]()
+	out := make(chan int)
 
+	fi := NewFanIn(out)
 	fi.AutoClose()
 
 	time.Sleep(10 * time.Millisecond)
 
 	// The output channel should be automatically closed because there are no
 	// input channels.
-	_, ok := <-fi.Chan()
+	_, ok := <-out
 	assert.False(t, ok)
-	assert.Error(t, fi.Close())
-}
-
-func TestFanIn_AutoClose_AddAfterClose(t *testing.T) {
-	ch1 := make(chan int)
-	fi := NewFanIn(ch1)
-	close(ch1)
-
-	fi.Wait()
-	assert.NoError(t, fi.Close())
-
-	// Adding a new channel after closing the fan-in should return an error.
-	assert.Error(t, fi.Add(make(chan int)))
-}
-
-func TestFanIn_Chan_Panic(t *testing.T) {
-	ch := make(chan int)
-	fi := NewFanIn(ch)
-
-	require.NotNil(t, fi.Chan())
-
-	// Second call to Chan should panic.
-	assert.Panics(t, func() { fi.Chan() })
+	fi.Close()
 }
 
 func TestFanOut(t *testing.T) {
-	ch := make(chan int)
+	in := make(chan int)
+	fo := NewFanOut(in)
 
-	fo := NewFanOut(ch)
-
-	out1 := fo.Chan()
-	out2 := fo.Chan()
-	out3 := fo.Chan()
+	out1 := fo.Output()
+	out2 := fo.Output()
+	out3 := fo.Output()
 
 	go func() {
-		ch <- 1
-		ch <- 2
-		ch <- 3
-		close(ch)
+		in <- 1
+		in <- 2
+		in <- 3
+		close(in)
 	}()
 
 	var mu sync.Mutex
@@ -165,6 +146,35 @@ func TestFanOut(t *testing.T) {
 	assert.ElementsMatch(t, []int{1, 2, 3}, vs[2])
 
 	// Any output channel should be closed after closing the input channel.
-	_, ok := <-fo.Chan()
+	_, ok := <-fo.Output()
 	assert.False(t, ok)
+}
+
+func TestFanOut_Chan_ChanContext(t *testing.T) {
+	in := make(chan int)
+	fo := NewFanOut(in)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	out := fo.OutputContext(ctx)
+	cancel()
+
+	// Channel should be closed after the context is canceled.
+	_, ok := <-out
+	assert.False(t, ok)
+
+	// Sending to the input channel should not block after the output channel is
+	// closed.
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		select {
+		case in <- 1:
+		case <-time.After(100 * time.Millisecond):
+			assert.Fail(t, "sending to the input channel should not block after the output channel is closed")
+		}
+		wg.Done()
+	}()
+	wg.Wait()
 }
