@@ -23,6 +23,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -97,11 +98,23 @@ func Duration(key string, def time.Duration) (v time.Duration) {
 	return env(time.ParseDuration, key, def)
 }
 
-// scan is of type fn[T] and returns the decimal value scanned (using fmt.Sscanf) from the string passed to it.
+// scanDec is of type fn[T] and returns the decimal value scanned (using fmt.Sscanf) from the string passed to it.
 func scanDec[T any](s string) (T, error) {
 	var ret T
 	_, err := fmt.Sscanf(s, "%d", &ret)
 	return ret, err
+}
+
+// // scan is of type fn[T] and returns the decimal value scanned (using fmt.Sscan) from the string passed to it.
+// func scan[T any](s string) (T, error) {
+// 	var ret T
+// 	_, err := fmt.Sscan(s, &ret)
+// 	return ret, err
+// }
+
+// Bool returns a bool from the environment variable with the given key.
+func Bool(key string, def bool) bool {
+	return env(strconv.ParseBool, key, def)
 }
 
 // Int returns an int from the environment variable with the given key.

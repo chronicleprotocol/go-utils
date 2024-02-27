@@ -18,7 +18,6 @@ package query
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -123,5 +122,5 @@ func doMakeHTTPRequest(r *HTTPRequest) ([]byte, error) {
 
 	defer resp.Body.Close()
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
