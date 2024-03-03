@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	utilHCL "github.com/chronicleprotocol/suite/pkg/util/hcl"
+	utilHCL "github.com/chronicleprotocol/go-utils/hcl"
 )
 
 func TestVariables(t *testing.T) {

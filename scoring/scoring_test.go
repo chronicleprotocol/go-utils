@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/chronicleprotocol/suite/pkg/util/timeutil"
+	"github.com/chronicleprotocol/go-utils/timeutil"
 )
 
 func TestNew(t *testing.T) {

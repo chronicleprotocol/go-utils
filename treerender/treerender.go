@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/chronicleprotocol/suite/pkg/util/maputil"
+	"github.com/chronicleprotocol/go-utils/maputil"
 )
 
 // NodeData contains data for a single node in the tree.

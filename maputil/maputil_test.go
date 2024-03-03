@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/chronicleprotocol/suite/pkg/util/errutil"
+	"github.com/chronicleprotocol/go-utils/errutil"
 )
 
 func TestKeys(t *testing.T) {
