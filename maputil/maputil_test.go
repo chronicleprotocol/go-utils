@@ -46,11 +46,11 @@ func TestSlice(t *testing.T) {
 func TestSortKeys(t *testing.T) {
 	t.Run("case-1", func(t *testing.T) {
 		m := map[string]string{"b": "b", "a": "a"}
-		assert.Equal(t, []string{"a", "b"}, SortKeys(m, sort.Strings))
+		assert.Equal(t, []string{"a", "b"}, SortedKeys(m, sort.Strings))
 	})
 	t.Run("case-2", func(t *testing.T) {
 		m := map[int]int{2: 2, 1: 1}
-		assert.Equal(t, []int{1, 2}, SortKeys(m, sort.Ints))
+		assert.Equal(t, []int{1, 2}, SortedKeys(m, sort.Ints))
 	})
 }
 

@@ -40,9 +40,9 @@ func Slice[T1 comparable, T2 any](m map[T1]T2) []T2 {
 	return values
 }
 
-// SortKeys returns the slice of keys for the given map, sorted using given
+// SortedKeys returns the slice of keys for the given map, sorted using given
 // sorting function.
-func SortKeys[T1 comparable, T2 any](m map[T1]T2, sort func([]T1)) []T1 {
+func SortedKeys[T1 comparable, T2 any](m map[T1]T2, sort func([]T1)) []T1 {
 	keys := Keys(m)
 	sort(keys)
 	return keys

@@ -112,7 +112,7 @@ func renderNode(typ string, params map[string]any, err error) []byte {
 		buf.WriteString(typ)
 	}
 	buf.WriteString("(")
-	for i, key := range maputil.SortKeys(params, sort.Strings) {
+	for i, key := range maputil.SortedKeys(params, sort.Strings) {
 		buf.WriteString(color(key, green))
 		buf.WriteString(":")
 		buf.WriteString(fmt.Sprintf("%v", params[key]))
