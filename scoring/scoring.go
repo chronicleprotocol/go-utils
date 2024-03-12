@@ -35,12 +35,12 @@ type Scoring[T comparable] struct {
 	ctx context.Context
 
 	items       map[T]float64
-	decayTicker *timeutil.Ticker
+	decayTicker *timeutil.Ticker //nolint:staticcheck
 	decayFunc   func(float64) float64
 }
 
 // New creates a new Scoring instance.
-func New[T comparable](decayTicker *timeutil.Ticker, decayFunc func(float64) float64) *Scoring[T] {
+func New[T comparable](decayTicker *timeutil.Ticker, decayFunc func(float64) float64) *Scoring[T] { //nolint:staticcheck
 	return &Scoring[T]{
 		items:       make(map[T]float64),
 		decayTicker: decayTicker,
