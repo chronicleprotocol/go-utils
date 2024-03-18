@@ -23,6 +23,8 @@ import (
 
 // Ticker is a wrapper around time.Ticker that allows to manually invoke
 // a tick and can be stopped via context.
+//
+// Deprecated: use Scheduler with IntervalTicker instead.
 type Ticker struct {
 	mu  sync.RWMutex
 	ctx context.Context
