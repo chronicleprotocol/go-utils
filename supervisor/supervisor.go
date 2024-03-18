@@ -1,0 +1,174 @@
+//  Copyright (C) 2021-2023 Chronicle Labs, Inc.
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU Affero General Public License as
+//  published by the Free Software Foundation, either version 3 of the
+//  License, or (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU Affero General Public License for more details.
+//
+//  You should have received a copy of the GNU Affero General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package supervisor
+
+import (
+	"context"
+	"errors"
+	"reflect"
+	"time"
+
+	"github.com/chronicleprotocol/suite/pkg/util/errutil"
+	"github.com/chronicleprotocol/suite/pkg/util/log"
+	"github.com/chronicleprotocol/suite/pkg/util/log/null"
+	"github.com/chronicleprotocol/suite/pkg/util/sysmon"
+)
+
+const LoggerTag = "SUPERVISOR"
+
+type Config interface {
+	Services(logger log.Logger, appName string, appVersion string) (Service, error)
+}
+
+// Service that could be managed by Supervisor.
+type Service interface {
+	// Start starts the service.
+	Start(ctx context.Context) error
+
+	// Wait returns a channel that is blocked while service is running.
+	// When the service is stopped, the channel will be closed. If an error
+	// occurs, an error will be sent to the channel before closing it.
+	Wait() <-chan error
+}
+
+// WithName is an optional interface that can be implemented by a service
+// to provide a name. The name is used in logs and metrics.
+type WithName interface {
+	Service
+
+	ServiceName() string
+}
+
+// Supervisor manages long-running services that implement the Service
+// interface. If any of the managed services fail, all other services are
+// stopped. This ensures that all services are running or none.
+type Supervisor struct {
+	ctx       context.Context
+	ctxCancel context.CancelFunc
+	waitCh    chan error
+	services  []Service
+	log       log.Logger
+}
+
+// New returns a new instance of *Supervisor.
+func New(logger log.Logger) *Supervisor {
+	if logger == nil {
+		logger = null.New()
+	}
+	return &Supervisor{
+		waitCh: make(chan error),
+		log:    logger.WithField("tag", LoggerTag),
+	}
+}
+
+// Watch add one or more services to a supervisor. Services must be added
+// before invoking the Start method, otherwise it panics.
+func (s *Supervisor) Watch(services ...Service) {
+	if s.ctx != nil {
+		s.log.Panic("supervisor was already started")
+	}
+	services = append(services, sysmon.New(time.Minute, s.log))
+	s.services = append(s.services, services...)
+}
+
+// Start starts all watched services. It can be invoked only once, otherwise
+// it panics.
+func (s *Supervisor) Start(ctx context.Context) error {
+	if s.ctx != nil {
+		return errors.New("service can be started only once")
+	}
+	if ctx == nil {
+		return errors.New("context must not be nil")
+	}
+	s.ctx, s.ctxCancel = context.WithCancel(ctx)
+	for _, srv := range s.services {
+		s.log.
+			WithField("service", ServiceName(srv)).
+			Debug("Starting service")
+		if err := srv.Start(s.ctx); err != nil {
+			s.ctxCancel()
+			close(s.waitCh)
+			return err
+		}
+	}
+	go s.serviceMonitor()
+	return nil
+}
+
+// Wait returns a channel that is blocked until at least one service is
+// running. When all services are stopped, the channel will be closed.
+// If an error occurs in any of the services, it will be sent to the
+// channel before closing it. If multiple service crash, only the first
+// error is returned.
+func (s *Supervisor) Wait() <-chan error {
+	return s.waitCh
+}
+
+func (s *Supervisor) serviceMonitor() {
+	var err error
+	// In this loop, a select is created (using reflection) that waits until
+	// at least one service has completed its work. This is reported by
+	// closing the channel returned by the Wait() or returning an error from
+	// the same channel (see the Service interface). The service is then
+	// removed from the s.service list and the loop is executed again until
+	// no service remains.
+	for len(s.services) > 0 {
+		// Wait for first stopped service:
+		c := make([]reflect.SelectCase, len(s.services))
+		for i, srv := range s.services {
+			c[i] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(srv.Wait())}
+		}
+		n, v, ok := reflect.Select(c)
+		name := ServiceName(s.services[n])
+
+		// If service failed, cancel the context to stop the others:
+		if !v.IsNil() {
+			s.log.
+				WithError(v.Interface().(error)).
+				WithField("service", name).
+				WithAdvice("This is a critical bug and must be investigated").
+				Error("Service crashed")
+			if err == nil {
+				err = errutil.Append(err, v.Interface().(error))
+			}
+			s.ctxCancel()
+			continue
+		}
+
+		s.log.
+			WithField("service", name).
+			Debug("Service stopped")
+
+		// Remove service from list if channel is closed:
+		if !ok {
+			s.services = append(s.services[:n], s.services[n+1:]...)
+		}
+	}
+	if err != nil {
+		s.waitCh <- err
+	}
+	close(s.waitCh)
+}
+
+// ServiceName returns the name of the service. If the service implements
+// the WithName interface, the ServiceName method is used. Otherwise, the
+// name of the type is returned.
+func ServiceName(s any) string {
+	if n, ok := s.(WithName); ok {
+		return n.ServiceName()
+	}
+	return reflect.Indirect(reflect.ValueOf(s)).Type().Name()
+}

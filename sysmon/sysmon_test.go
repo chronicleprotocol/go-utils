@@ -1,0 +1,77 @@
+//  Copyright (C) 2021-2023 Chronicle Labs, Inc.
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU Affero General Public License as
+//  published by the Free Software Foundation, either version 3 of the
+//  License, or (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU Affero General Public License for more details.
+//
+//  You should have received a copy of the GNU Affero General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package sysmon
+
+import (
+	"context"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/chronicleprotocol/suite/pkg/util/log"
+	"github.com/chronicleprotocol/suite/pkg/util/log/callback"
+	"github.com/chronicleprotocol/suite/pkg/util/log/null"
+)
+
+func TestSysmon(t *testing.T) {
+	ctx, ctxCancel := context.WithCancel(context.Background())
+	defer ctxCancel()
+
+	f := int32(0)
+	l := callback.New(log.Debug, func(level log.Level, fields log.Fields, msg string) {
+		if msg != "Status" {
+			return
+		}
+		assert.Equal(t, "Status", msg)
+		assert.Equal(t, log.Debug, level)
+		atomic.StoreInt32(&f, 1)
+	})
+
+	s := New(time.Second, l)
+	require.NoError(t, s.Start(ctx))
+
+	// wait for log
+	for i := 0; i < 10 && atomic.LoadInt32(&f) == 0; i++ {
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// check if log has been sent
+	require.Equal(t, int32(1), atomic.LoadInt32(&f), "log message has not been sent")
+
+	// Wait() channel should return nil after cancelling the context
+	ctxCancel()
+	require.NoError(t, <-s.Wait())
+}
+
+func TestSysmon_RunWithDebugLevelOnly(t *testing.T) {
+	ctx, ctxCancel := context.WithCancel(context.Background())
+	defer ctxCancel()
+
+	l := null.New()
+
+	s := New(time.Second, l)
+	require.NoError(t, s.Start(ctx))
+
+	select {
+	case n := <-s.Wait():
+		require.Nil(t, n)
+	case <-time.NewTimer(time.Second).C:
+		require.Fail(t, "sysmon should not start with verbosity other than debug")
+	}
+}
