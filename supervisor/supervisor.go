@@ -21,10 +21,10 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/chronicleprotocol/suite/pkg/util/errutil"
-	"github.com/chronicleprotocol/suite/pkg/util/log"
-	"github.com/chronicleprotocol/suite/pkg/util/log/null"
-	"github.com/chronicleprotocol/suite/pkg/util/sysmon"
+	"github.com/chronicleprotocol/go-utils/errutil"
+	"github.com/chronicleprotocol/go-utils/log"
+	"github.com/chronicleprotocol/go-utils/log/null"
+	"github.com/chronicleprotocol/go-utils/sysmon"
 )
 
 const LoggerTag = "SUPERVISOR"

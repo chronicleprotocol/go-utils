@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chronicleprotocol/suite/pkg/util/supervisor"
+	"github.com/chronicleprotocol/go-utils/supervisor"
 )
 
 const shutdownTimeout = 1 * time.Second

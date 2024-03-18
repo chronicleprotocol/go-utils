@@ -18,7 +18,7 @@ package logrus
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/chronicleprotocol/suite/pkg/util/log"
+	"github.com/chronicleprotocol/go-utils/log"
 )
 
 // New creates a new logger that uses Logrus for logging.

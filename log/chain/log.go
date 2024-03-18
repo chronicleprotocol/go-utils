@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/chronicleprotocol/suite/pkg/util/chanutil"
-	"github.com/chronicleprotocol/suite/pkg/util/log"
+	"github.com/chronicleprotocol/go-utils/chanutil"
+	"github.com/chronicleprotocol/go-utils/log"
 )
 
 // New creates a new logger that can chain multiple loggers.

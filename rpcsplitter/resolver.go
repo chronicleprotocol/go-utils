@@ -20,7 +20,7 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/chronicleprotocol/suite/pkg/util/rpcsplitter/types"
+	"github.com/chronicleprotocol/go-utils/rpcsplitter/types"
 )
 
 var errNotEnoughResponses = errors.New("not enough responses from RPC servers")

@@ -28,13 +28,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chronicleprotocol/suite/pkg/util/dump"
-	"github.com/chronicleprotocol/suite/pkg/util/httpserver"
-	"github.com/chronicleprotocol/suite/pkg/util/interpolate"
-	"github.com/chronicleprotocol/suite/pkg/util/log/null"
-	"github.com/chronicleprotocol/suite/pkg/util/maputil"
+	"github.com/chronicleprotocol/go-utils/dump"
+	"github.com/chronicleprotocol/go-utils/httpserver"
+	"github.com/chronicleprotocol/go-utils/interpolate"
+	"github.com/chronicleprotocol/go-utils/log/null"
+	"github.com/chronicleprotocol/go-utils/maputil"
 
-	"github.com/chronicleprotocol/suite/pkg/util/log"
+	"github.com/chronicleprotocol/go-utils/log"
 )
 
 const LoggerTag = "METRICS"

@@ -18,7 +18,7 @@ package null
 import (
 	"fmt"
 
-	"github.com/chronicleprotocol/suite/pkg/util/log"
+	"github.com/chronicleprotocol/go-utils/log"
 )
 
 type logger struct{}

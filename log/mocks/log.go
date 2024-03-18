@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/chronicleprotocol/suite/pkg/util/log"
+	"github.com/chronicleprotocol/go-utils/log"
 )
 
 type Logger struct {

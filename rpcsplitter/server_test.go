@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/chronicleprotocol/suite/pkg/util/rpcsplitter/types"
+	"github.com/chronicleprotocol/go-utils/rpcsplitter/types"
 )
 
 var blockWithHashesResp = json.RawMessage(`

@@ -26,7 +26,7 @@ import (
 
 	"golang.org/x/exp/constraints"
 
-	"github.com/chronicleprotocol/suite/pkg/util/sliceutil"
+	"github.com/chronicleprotocol/go-utils/sliceutil"
 )
 
 const (

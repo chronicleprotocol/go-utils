@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/chronicleprotocol/suite/pkg/util/errutil"
-	"github.com/chronicleprotocol/suite/pkg/util/log"
-	"github.com/chronicleprotocol/suite/pkg/util/log/null"
+	"github.com/chronicleprotocol/go-utils/errutil"
+	"github.com/chronicleprotocol/go-utils/log"
+	"github.com/chronicleprotocol/go-utils/log/null"
 )
 
 const ReloaderLoggerTag = "RELOADER"

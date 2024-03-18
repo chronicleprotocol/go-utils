@@ -18,7 +18,7 @@ package callback
 import (
 	"fmt"
 
-	"github.com/chronicleprotocol/suite/pkg/util/log"
+	"github.com/chronicleprotocol/go-utils/log"
 )
 
 type LogFunc func(level log.Level, fields log.Fields, log string)

@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/chronicleprotocol/suite/pkg/util/log"
+	"github.com/chronicleprotocol/go-utils/log"
 )
 
 const httpRequestLog = "HTTP request"

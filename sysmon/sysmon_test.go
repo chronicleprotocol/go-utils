@@ -24,9 +24,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/chronicleprotocol/suite/pkg/util/log"
-	"github.com/chronicleprotocol/suite/pkg/util/log/callback"
-	"github.com/chronicleprotocol/suite/pkg/util/log/null"
+	"github.com/chronicleprotocol/go-utils/log"
+	"github.com/chronicleprotocol/go-utils/log/callback"
+	"github.com/chronicleprotocol/go-utils/log/null"
 )
 
 func TestSysmon(t *testing.T) {

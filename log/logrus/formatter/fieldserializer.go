@@ -20,7 +20,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/chronicleprotocol/suite/pkg/util/dump"
+	"github.com/chronicleprotocol/go-utils/dump"
 )
 
 // FieldSerializerFormatter will serialize the log field values to basic types.

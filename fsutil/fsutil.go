@@ -18,7 +18,7 @@ package fsutil
 import (
 	"io/fs"
 
-	"github.com/chronicleprotocol/suite/pkg/util/errutil"
+	"github.com/chronicleprotocol/go-utils/errutil"
 )
 
 // NewChainFS returns a new FS that combines multiple FS into one.

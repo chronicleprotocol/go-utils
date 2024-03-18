@@ -26,9 +26,9 @@ import (
 
 	gethRPC "github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/chronicleprotocol/suite/pkg/util/log"
-	"github.com/chronicleprotocol/suite/pkg/util/log/null"
-	"github.com/chronicleprotocol/suite/pkg/util/rpcsplitter/types"
+	"github.com/chronicleprotocol/go-utils/log"
+	"github.com/chronicleprotocol/go-utils/log/null"
+	"github.com/chronicleprotocol/go-utils/rpcsplitter/types"
 )
 
 const LoggerTag = "RPCSPLITTER"

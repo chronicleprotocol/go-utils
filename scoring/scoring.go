@@ -22,8 +22,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/chronicleprotocol/suite/pkg/util/maputil"
-	"github.com/chronicleprotocol/suite/pkg/util/timeutil"
+	"github.com/chronicleprotocol/go-utils/maputil"
+	"github.com/chronicleprotocol/go-utils/timeutil"
 )
 
 // Scoring is a simple scoring system that allows to track scores for a set of
